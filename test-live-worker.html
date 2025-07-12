@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Live Worker Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .test-btn {
+        background: #ff003b;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .result {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 4px;
+        background: #f8f9fa;
+      }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+      }
+      pre {
+        background: #f1f1f1;
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Live Cloudflare Worker Test</h1>
+    <button class="test-btn" onclick="testLiveWorker()">
+      Test Live Worker
+    </button>
+    <div id="result"></div>
+
+    <script>
+      async function testLiveWorker() {
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML =
+          '<div class="result">Testing live worker...</div>';
+
+        try {
+          const response = await fetch(
+            "https://proj9loreal.cxmedina12.workers.dev/",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "gpt-4o",
+                messages: [
+                  {
+                    role: "user",
+                    content: "Hello, this is a test of the live worker.",
+                  },
+                ],
+                max_tokens: 50,
+                temperature: 0.7,
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok) {
+            resultDiv.innerHTML = `
+                        <div class="result success">
+                            <strong>✅ Live Worker Success!</strong><br>
+                            Status: ${response.status}<br>
+                            Response: <pre>${JSON.stringify(
+                              data,
+                              null,
+                              2
+                            )}</pre>
+                        </div>
+                    `;
+          } else {
+            resultDiv.innerHTML = `
+                        <div class="result error">
+                            <strong>❌ Live Worker Error!</strong><br>
+                            Status: ${response.status}<br>
+                            Error: <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+          }
+        } catch (error) {
+          resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>❌ Network Error!</strong><br>
+                        Error: ${error.message}<br>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+        }
+      }
+    </script>
+  </body>
+</html>

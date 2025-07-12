@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Debug - L'Oréal Chatbot</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .test-section {
+        background: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .test-button {
+        background: #ff003b;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+      }
+      .test-button:hover {
+        background: #d4002f;
+      }
+      .result {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 10px;
+        border-left: 4px solid #007bff;
+      }
+      .error {
+        border-left-color: #dc3545;
+        background: #f8d7da;
+      }
+      .success {
+        border-left-color: #28a745;
+        background: #d4edda;
+      }
+      pre {
+        background: #f1f1f1;
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>L'Oréal Chatbot Debug Tool</h1>
+
+    <div class="test-section">
+      <h2>1. Test Worker Connectivity</h2>
+      <p>This will test if your Cloudflare Worker is accessible.</p>
+      <button class="test-button" onclick="testWorkerConnectivity()">
+        Test Worker
+      </button>
+      <div id="connectivity-result"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>2. Test OpenAI API Call</h2>
+      <p>This will test if your worker can make OpenAI API calls.</p>
+      <button class="test-button" onclick="testOpenAI()">Test OpenAI</button>
+      <div id="openai-result"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>3. Configuration Check</h2>
+      <p>Current configuration:</p>
+      <div id="config-result"></div>
+    </div>
+
+    <script>
+      const OPENAI_API_URL = "https://proj9loreal.cxmedina12.workers.dev/";
+
+      // Show current configuration
+      document.getElementById("config-result").innerHTML = `
+            <div class="result">
+                <strong>Worker URL:</strong> ${OPENAI_API_URL}<br>
+                <strong>Current Domain:</strong> ${window.location.origin}<br>
+                <strong>User Agent:</strong> ${navigator.userAgent}
+            </div>
+        `;
+
+      async function testWorkerConnectivity() {
+        const resultDiv = document.getElementById("connectivity-result");
+        resultDiv.innerHTML =
+          '<div class="result">Testing connectivity...</div>';
+
+        try {
+          const response = await fetch(OPENAI_API_URL, {
+            method: "OPTIONS",
+          });
+
+          resultDiv.innerHTML = `
+                    <div class="result success">
+                        <strong>✅ Worker is accessible!</strong><br>
+                        Status: ${response.status}<br>
+                        Headers: ${JSON.stringify(
+                          Object.fromEntries(response.headers.entries()),
+                          null,
+                          2
+                        )}
+                    </div>
+                `;
+        } catch (error) {
+          resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>❌ Worker connectivity failed!</strong><br>
+                        Error: ${error.message}<br>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+        }
+      }
+
+      async function testOpenAI() {
+        const resultDiv = document.getElementById("openai-result");
+        resultDiv.innerHTML = '<div class="result">Testing OpenAI API...</div>';
+
+        try {
+          const response = await fetch(OPENAI_API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "gpt-4o",
+              messages: [
+                { role: "user", content: "Hello, this is a test message." },
+              ],
+              max_tokens: 50,
+              temperature: 0.7,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            resultDiv.innerHTML = `
+                        <div class="result success">
+                            <strong>✅ OpenAI API working!</strong><br>
+                            Status: ${response.status}<br>
+                            Response: <pre>${JSON.stringify(
+                              data,
+                              null,
+                              2
+                            )}</pre>
+                        </div>
+                    `;
+          } else {
+            resultDiv.innerHTML = `
+                        <div class="result error">
+                            <strong>❌ OpenAI API failed!</strong><br>
+                            Status: ${response.status}<br>
+                            Error: <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+          }
+        } catch (error) {
+          resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>❌ OpenAI API call failed!</strong><br>
+                        Error: ${error.message}<br>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+        }
+      }
+    </script>
+  </body>
+</html>
