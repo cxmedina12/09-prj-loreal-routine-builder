@@ -16,7 +16,7 @@ let selectedProducts = [];
 let chatHistory = [];
 
 /* localStorage key for selected products */
-const STORAGE_KEY = 'loreal-selected-products';
+const STORAGE_KEY = "loreal-selected-products";
 
 /* Show initial placeholder until user selects a category */
 productsContainer.innerHTML = `
@@ -30,7 +30,7 @@ function saveSelectedProducts() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedProducts));
   } catch (error) {
-    console.error('Error saving to localStorage:', error);
+    console.error("Error saving to localStorage:", error);
   }
 }
 
@@ -50,7 +50,7 @@ async function loadSelectedProducts() {
       }
     }
   } catch (error) {
-    console.error('Error loading from localStorage:', error);
+    console.error("Error loading from localStorage:", error);
     selectedProducts = [];
   }
 }
@@ -60,7 +60,7 @@ async function clearAllSelectedProducts() {
   selectedProducts = [];
   saveSelectedProducts();
   updateSelectedProductsList();
-  
+
   if (categoryFilter.value) {
     const products = await loadProducts();
     const filteredProducts = products.filter(
@@ -68,7 +68,7 @@ async function clearAllSelectedProducts() {
     );
     displayProducts(filteredProducts);
   }
-  
+
   chatWindow.innerHTML += `
     <div class="chat-message ai-message">
       <i class="fa-solid fa-check-circle"></i> All selected products have been cleared!
@@ -179,7 +179,7 @@ async function removeProduct(productId) {
 async function sendChatMessage(message) {
   chatHistory.push({
     role: "user",
-    content: message
+    content: message,
   });
 
   chatWindow.innerHTML += `
@@ -195,14 +195,19 @@ async function sendChatMessage(message) {
   `;
 
   try {
-    const selectedProductsContext = selectedProducts.length > 0 
-      ? `\n\nCurrently selected products:\n${JSON.stringify(selectedProducts.map(p => ({
-          name: p.name,
-          brand: p.brand,
-          category: p.category,
-          description: p.description
-        })), null, 2)}`
-      : "\n\nNo products currently selected.";
+    const selectedProductsContext =
+      selectedProducts.length > 0
+        ? `\n\nCurrently selected products:\n${JSON.stringify(
+            selectedProducts.map((p) => ({
+              name: p.name,
+              brand: p.brand,
+              category: p.category,
+              description: p.description,
+            })),
+            null,
+            2
+          )}`
+        : "\n\nNo products currently selected.";
 
     const systemMessage = {
       role: "system",
@@ -212,7 +217,7 @@ async function sendChatMessage(message) {
       
       Current context: ${selectedProductsContext}
       
-      Keep responses friendly, informative, and helpful. If users ask about specific products, refer to their selected products when relevant.`
+      Keep responses friendly, informative, and helpful. If users ask about specific products, refer to their selected products when relevant.`,
     };
 
     const messages = [systemMessage, ...chatHistory];
@@ -230,7 +235,19 @@ async function sendChatMessage(message) {
       }),
     });
 
+    // Check if response is ok
+    if (!response.ok) {
+      throw new Error(
+        `HTTP error! status: ${response.status} - ${response.statusText}`
+      );
+    }
+
     const data = await response.json();
+
+    // Check if the response has an error
+    if (data.error) {
+      throw new Error(`OpenAI API Error: ${data.error.message || data.error}`);
+    }
 
     const loadingMessage = chatWindow.querySelector(".loading");
     if (loadingMessage) {
@@ -239,15 +256,15 @@ async function sendChatMessage(message) {
 
     if (data.choices && data.choices[0]) {
       const aiResponse = data.choices[0].message.content;
-      
+
       chatHistory.push({
         role: "assistant",
-        content: aiResponse
+        content: aiResponse,
       });
 
       chatWindow.innerHTML += `
         <div class="chat-message ai-message">
-          ${aiResponse.replace(/\n/g, '<br>')}
+          ${aiResponse.replace(/\n/g, "<br>")}
         </div>
       `;
     } else {
@@ -257,16 +274,24 @@ async function sendChatMessage(message) {
         </div>
       `;
     }
-
   } catch (error) {
     const loadingMessage = chatWindow.querySelector(".loading");
     if (loadingMessage) {
       loadingMessage.remove();
     }
 
+    // Enhanced error logging for debugging
+    console.error("Chat API Error:", error);
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      apiUrl: OPENAI_API_URL,
+    });
+
     chatWindow.innerHTML += `
       <div class="chat-message ai-message error">
         Error: Unable to connect to the chat service. Please check your internet connection.
+        <br><small>Debug info: ${error.message}</small>
       </div>
     `;
   }
@@ -285,9 +310,11 @@ generateRoutineBtn.addEventListener("click", async () => {
     return;
   }
 
-  const productNames = selectedProducts.map(p => `${p.name} by ${p.brand}`).join(", ");
+  const productNames = selectedProducts
+    .map((p) => `${p.name} by ${p.brand}`)
+    .join(", ");
   const message = `Create a skincare routine using these products: ${productNames}`;
-  
+
   await sendChatMessage(message);
 });
 
@@ -315,7 +342,11 @@ clearAllBtn.addEventListener("click", async () => {
     return;
   }
 
-  if (confirm(`Are you sure you want to clear all ${selectedProducts.length} selected products?`)) {
+  if (
+    confirm(
+      `Are you sure you want to clear all ${selectedProducts.length} selected products?`
+    )
+  ) {
     await clearAllSelectedProducts();
   }
 });
