@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Cloudflare Worker Connection</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+      .info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 5px;
+        cursor: pointer;
+      }
+      pre {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🧪 Cloudflare Worker Test</h1>
+
+    <div class="test-section info">
+      <h2>Test Configuration</h2>
+      <p><strong>Worker URL:</strong> <span id="workerUrl"></span></p>
+      <p>
+        <strong>Test Status:</strong> <span id="testStatus">Ready to test</span>
+      </p>
+    </div>
+
+    <div class="test-section">
+      <h2>Test Actions</h2>
+      <button onclick="testWorkerConnection()">Test Worker Connection</button>
+      <button onclick="testChatMessage()">Test Chat Message</button>
+      <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div class="test-section">
+      <h2>Test Results</h2>
+      <div id="results"></div>
+    </div>
+
+    <script src="secrets.js"></script>
+    <script>
+      // Display current configuration
+      document.getElementById("workerUrl").textContent = OPENAI_API_URL;
+
+      function addResult(message, type = "info") {
+        const results = document.getElementById("results");
+        const div = document.createElement("div");
+        div.className = `test-section ${type}`;
+        div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+        results.appendChild(div);
+      }
+
+      function clearResults() {
+        document.getElementById("results").innerHTML = "";
+        document.getElementById("testStatus").textContent = "Ready to test";
+      }
+
+      async function testWorkerConnection() {
+        document.getElementById("testStatus").textContent =
+          "Testing connection...";
+        addResult("Testing basic worker connection...", "info");
+
+        try {
+          const response = await fetch(OPENAI_API_URL, {
+            method: "GET",
+          });
+
+          if (response.status === 405) {
+            addResult(
+              "✅ Worker is accessible (correctly returns 405 Method Not Allowed for GET)",
+              "success"
+            );
+          } else {
+            addResult(
+              `⚠️ Unexpected response: ${response.status} ${response.statusText}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          addResult(`❌ Connection failed: ${error.message}`, "error");
+        }
+      }
+
+      async function testChatMessage() {
+        document.getElementById("testStatus").textContent =
+          "Testing chat message...";
+        addResult("Testing chat message with OpenAI API...", "info");
+
+        try {
+          const response = await fetch(OPENAI_API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "gpt-4o",
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    'You are a helpful assistant. Respond with exactly: "Test successful!"',
+                },
+                {
+                  role: "user",
+                  content: "Hello, this is a test message.",
+                },
+              ],
+              max_tokens: 20,
+              temperature: 0.1,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.choices && data.choices[0]) {
+            addResult(
+              `✅ Chat test successful!<br><strong>Response:</strong> ${data.choices[0].message.content}`,
+              "success"
+            );
+            document.getElementById("testStatus").textContent =
+              "All tests passed!";
+          } else {
+            addResult(
+              `❌ Chat test failed:<br><pre>${JSON.stringify(
+                data,
+                null,
+                2
+              )}</pre>`,
+              "error"
+            );
+            document.getElementById("testStatus").textContent = "Test failed";
+          }
+        } catch (error) {
+          addResult(`❌ Chat test error: ${error.message}`, "error");
+          document.getElementById("testStatus").textContent = "Test failed";
+        }
+      }
+    </script>
+  </body>
+</html>

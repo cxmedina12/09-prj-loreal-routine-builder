@@ -1,0 +1,13 @@
+# Cloudflare Worker Configuration
+name = "loreal-skincare-chatbot"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Environment variables
+# Set your OpenAI API key as a secret using: wrangler secret put OPENAI_API_KEY
+# Example: wrangler secret put OPENAI_API_KEY
+# Then enter your actual OpenAI API key when prompted
+
+[vars]
+# You can add non-secret environment variables here if needed
+# ENVIRONMENT = "production"
