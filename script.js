@@ -222,18 +222,21 @@ async function sendChatMessage(message) {
 
     const messages = [systemMessage, ...chatHistory];
 
-    const response = await fetch(OPENAI_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: messages,
-        max_tokens: 600,
-        temperature: 0.7,
-      }),
-    });
+    const response = await fetch(
+      "https://proj9loreal.cxmedina12.workers.dev/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: messages,
+          max_tokens: 600,
+          temperature: 0.7,
+        }),
+      }
+    );
 
     // Check if response is ok
     if (!response.ok) {
@@ -285,7 +288,7 @@ async function sendChatMessage(message) {
     console.error("Error details:", {
       message: error.message,
       stack: error.stack,
-      apiUrl: OPENAI_API_URL,
+      apiUrl: "https://proj9loreal.cxmedina12.workers.dev/",
     });
 
     chatWindow.innerHTML += `
